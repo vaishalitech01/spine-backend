@@ -1,7 +1,7 @@
 import express from 'express';
 import connectDB from './config/db.js';
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import './config/cron.js';
 
 // Route Imports
