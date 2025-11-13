@@ -27,8 +27,13 @@ export const getRewardWallet = async (req, res) => {
       (tx) => tx.reason === "Referral commission" || tx.reason === "Referral Level 1 commission" || tx.reason === "Referral Level 2 commission" || tx.reason === "Referral Level 3 commission"
     );
 
+    const investmentTransactions = wallet.transactions.filter(
+      (tx) => tx.reason === "Investment reward" || tx.reason === "Investment principal return" || tx.reason === "Investment subscription"
+    );
+
     const totalSpinReward = spinTransactions.reduce((sum, tx) => sum + tx.amount, 0);
     const totalReferralReward = referralTransations.reduce((sum, tx) => sum + tx.amount, 0);
+    const totalInvestmentReward = investmentTransactions.reduce((sum, tx) => sum + tx.amount, 0);
 
     res.status(200).json({
       success: true,
@@ -36,6 +41,7 @@ export const getRewardWallet = async (req, res) => {
       rewardBalance: wallet.balance,
       referralBalance: totalReferralReward,
       spineBalance: totalSpinReward,
+      investmentBalance: totalInvestmentReward
     });
   } catch (error) {
     console.error("Error in getRewardWallet:", error);

@@ -8,12 +8,16 @@ const transactionSchema = new Schema({
     },
     type:{
         type:String,
-        enum:["deposit","withdrawal","bonus","SpinPurchase"],
+        enum:["deposit","withdrawal","bonus","SpinPurchase","investment"],
         required:true
     },
     amount:{
         type:Number,
         required:true
+    },
+    transactionType: {
+        type: String,
+        enum: ["credit", "debit"],
     },
     status:{
         type:String,

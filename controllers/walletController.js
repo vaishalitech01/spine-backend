@@ -55,6 +55,7 @@ export const depositFunds = async (req, res) => {
       type: "deposit",
       amount,
       status: "pending",
+      transactionType: "credit",
       address: walletAddress || null
     });
 
@@ -114,6 +115,7 @@ export const withdrawFunds = async (req, res) => {
       type: "withdrawal",
       amount,
       status: "pending",
+      transactionType: "debit",
       address: walletAddress || null
     });
 

@@ -1,13 +1,29 @@
 import Notification from '../models/notificationModel.js';
 
 export const getUserNotifications = async (req, res) => {
-    try {
-        const userId = req.userId; // Extract from middleware or token
-        const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
-        res.status(200).json({ success: true, notifications });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
+  try {
+    const userId = req.userId;
+    const limit = parseInt(req.query.limit) || 20;
+    const lastId = req.query.lastId;
+
+    const query = { userId };
+    if (lastId) query._id = { $lt: lastId }; // fetch older ones
+
+    const notifications = await Notification.find(query)
+      .sort({ _id: -1 })
+      .limit(limit);
+
+    res.json({
+      success: true,
+      notifications,
+      nextCursor:
+        notifications.length > 0
+          ? notifications[notifications.length - 1]._id
+          : null,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 };
 
 export const deleteUserNotifications = async (req, res) => {

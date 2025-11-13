@@ -46,6 +46,8 @@ export const purchaseSpin = async (req, res) => {
       userId,
       amount: totalAmount,
       type: "SpinPurchase",
+      transactionType: "debit",
+      status: "completed",
       amount: spinCount,
     });
 
@@ -63,7 +65,7 @@ export const purchaseSpin = async (req, res) => {
   }
 };
 
-// 2nd spin with 5 max spin a day
+
 export const playSpin2 = async (req, res) => {
   try {
     const userId = req.userId;
@@ -73,19 +75,18 @@ export const playSpin2 = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // 🔹 Check if we need to reset daily spins
+    // 🔹 Reset daily spins if new day
     const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
     const lastSpinDate = user.lastSpinDate
       ? user.lastSpinDate.toISOString().split("T")[0]
       : null;
 
     if (lastSpinDate !== today) {
-      // Reset counter if new day
       user.dailySpinCount = 0;
       user.lastSpinDate = new Date();
     }
 
-    // 🔹 Check daily spin limit
+    // 🔹 Daily limit check
     if (user.dailySpinCount >= 5) {
       return res.status(400).json({
         success: false,
@@ -93,18 +94,23 @@ export const playSpin2 = async (req, res) => {
       });
     }
 
-    // 🔹 Check spin balance
+    // 🔹 Spin balance check
     if (user.spinCount <= 0) {
       return res
         .status(400)
         .json({ success: false, message: "No spins available" });
     }
 
-    // ✅ Spin logic same as before
+    // ✅ Spin logic starts
     let spinValue = 0;
     const randomValues = [0.11, 0.33, 0.50, 0.80];
 
-    if (!user.hasClaimedFirstSpin) {
+    // 🎯 Milestone check — every 51st spin (e.g., 51, 102, 153, etc.)
+    if ((user.totalSpinPlayed + 1) % 51 === 0) {
+      spinValue = Math.random() < 0.5 ? 5 : 10; // 50-50 chance of $5 or $10
+      console.log("🎉 Milestone Reward:", spinValue);
+      user.cycleSpinCounter = 0; // optional reset
+    } else if (!user.hasClaimedFirstSpin) {
       spinValue = 0.11;
       user.hasClaimedFirstSpin = true;
       user.cycleSpinCounter = 1;
@@ -122,12 +128,13 @@ export const playSpin2 = async (req, res) => {
     console.log("Spin cycle counter:", user.cycleSpinCounter);
     console.log("Spin reward value:", spinValue);
 
+    // ✅ Create spin record
     const spin = await Spin.create({ userId, resultValue: spinValue });
 
-    // Update counts
+    // 🔹 Update user spin data
     user.spinCount -= 1;
     user.totalSpinPlayed += 1;
-    user.dailySpinCount += 1; // ✅ Increase daily spin count
+    user.dailySpinCount += 1;
     user.lastSpinDate = new Date();
     await user.save();
 
@@ -143,7 +150,7 @@ export const playSpin2 = async (req, res) => {
     UserReward.transactions.push({
       type: "credit",
       amount: spinValue,
-      reason: "Spin reward",
+      reason: (user.totalSpinPlayed % 51 === 0) ? "Milestone Spin Reward" : "Spin reward",
       date: new Date(),
     });
     await UserReward.save();
@@ -152,33 +159,159 @@ export const playSpin2 = async (req, res) => {
       userId,
       type: "bonus",
       amount: spinValue,
+      transactionType: "credit",
       status: "completed",
     });
 
     res.status(200).json({
       success: true,
-      message: "Spin played successfully",
+      message:
+        (user.totalSpinPlayed % 51 === 0)
+          ? `🎉 Milestone reached! You won $${spinValue}!`
+          : "Spin played successfully",
       spin,
       UserReward,
-      remainingSpinsToday: 5 - user.dailySpinCount, // ✅ return remaining spins
+      remainingSpinsToday: 5 - user.dailySpinCount,
       prizes: [
         "$0",
         "$1",
         "IPAD",
         "WATCH",
         "$0.11",
-        "$0.66",
         "$0.33",
         "$0.50",
         "$0.80",
         "$40",
+        "$5",
+        "$10",
       ],
     });
   } catch (error) {
-    console.error("Error in playSpin:", error);
+    console.error("Error in playSpin2:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+
+// 2nd spin with 5 max spin a day
+// export const playSpin2 = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const user = await User.findById(userId);
+
+//     if (!user) {
+//       return res.status(404).json({ success: false, message: "User not found" });
+//     }
+
+//     // 🔹 Check if we need to reset daily spins
+//     const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+//     const lastSpinDate = user.lastSpinDate
+//       ? user.lastSpinDate.toISOString().split("T")[0]
+//       : null;
+
+//     if (lastSpinDate !== today) {
+//       // Reset counter if new day
+//       user.dailySpinCount = 0;
+//       user.lastSpinDate = new Date();
+//     }
+
+//     // 🔹 Check daily spin limit
+//     if (user.dailySpinCount >= 5) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Daily 5 spins limit reached.\nNew spins available at 12:00 AM IST.",
+//       });
+//     }
+
+//     // 🔹 Check spin balance
+//     if (user.spinCount <= 0) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "No spins available" });
+//     }
+
+//     // ✅ Spin logic same as before
+//     let spinValue = 0;
+//     const randomValues = [0.11, 0.33, 0.50, 0.80];
+
+//     if (!user.hasClaimedFirstSpin) {
+//       spinValue = 0.11;
+//       user.hasClaimedFirstSpin = true;
+//       user.cycleSpinCounter = 1;
+//     } else {
+//       if (user.cycleSpinCounter === 3) {
+//         spinValue = 1;
+//         user.cycleSpinCounter = 1;
+//       } else {
+//         const randomIndex = Math.floor(Math.random() * randomValues.length);
+//         spinValue = randomValues[randomIndex];
+//         user.cycleSpinCounter += 1;
+//       }
+//     }
+
+//     console.log("Spin cycle counter:", user.cycleSpinCounter);
+//     console.log("Spin reward value:", spinValue);
+
+
+
+//     const spin = await Spin.create({ userId, resultValue: spinValue });
+
+//     // Update counts
+//     user.spinCount -= 1;
+//     user.totalSpinPlayed += 1;
+//     user.dailySpinCount += 1; // ✅ Increase daily spin count
+//     user.lastSpinDate = new Date();
+//     await user.save();
+
+//     // ✅ Update reward wallet
+//     const UserReward = await RewardWallet.findOne({ userId });
+//     if (!UserReward) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "User reward wallet not found" });
+//     }
+
+//     UserReward.balance += spinValue;
+//     UserReward.transactions.push({
+//       type: "credit",
+//       amount: spinValue,
+//       reason: "Spin reward",
+//       date: new Date(),
+//     });
+//     await UserReward.save();
+
+//     await Transaction.create({
+//       userId,
+//       type: "bonus",
+//       amount: spinValue,
+//       transactionType: "credit",
+//       status: "completed",
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Spin played successfully",
+//       spin,
+//       UserReward,
+//       remainingSpinsToday: 5 - user.dailySpinCount, // ✅ return remaining spins
+//       prizes: [
+//         "$0",
+//         "$1",
+//         "IPAD",
+//         "WATCH",
+//         "$0.11",
+//         "$0.66",
+//         "$0.33",
+//         "$0.50",
+//         "$0.80",
+//         "$40",
+//       ],
+//     });
+//   } catch (error) {
+//     console.error("Error in playSpin:", error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// };
 
 
 // play Spin 2nd route
@@ -268,8 +401,6 @@ export const playSpin2 = async (req, res) => {
 // };
 
 
-
-
 export const playSpin = async (req, res) => {
   try {
     const userId = req.userId;
@@ -280,8 +411,6 @@ export const playSpin = async (req, res) => {
         .status(400)
         .json({ success: false, message: "No spins available" });
     }
-
-
 
     let spinValue = 0;
 
@@ -326,6 +455,7 @@ await Transaction.create({
   userId,
   type: "bonus", 
   amount: spinValue,
+  transactionType: "credit",
   status: "completed" 
 });
     res.status(200).json({
@@ -351,11 +481,6 @@ await Transaction.create({
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
-
-
-
-
 
 export const getPrizeList = async (req, res) => {
   try {
