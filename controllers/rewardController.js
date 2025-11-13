@@ -28,7 +28,7 @@ export const getRewardWallet = async (req, res) => {
     );
 
     const investmentTransactions = wallet.transactions.filter(
-      (tx) => tx.reason === "Investment reward" || tx.reason === "Investment principal return" || tx.reason === "Investment subscription"
+      (tx) => tx.reason === "Final investment reward" || tx.reason === "Investment reward on maturity" || tx.reason === "Daily investment reward"
     );
 
     const totalSpinReward = spinTransactions.reduce((sum, tx) => sum + tx.amount, 0);
