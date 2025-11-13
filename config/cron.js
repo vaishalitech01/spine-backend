@@ -7,8 +7,7 @@ import Transaction from "../models/transactionModel.js";
 import RewardWallet from "../models/rewardWalletModel.js";
 
 // Runs daily at 12:00 AM and 12:00 PM
-// run after every 2 minutes for testing: "*/2 * * * *"
-cron.schedule("*/1 * * * *", async () => {
+cron.schedule("0 0,12 * * *", async () => {
   console.log("🔁 Running Auto Payout Job...");
 
   try {
