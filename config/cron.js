@@ -70,7 +70,7 @@ cron.schedule("0 0,12 * * *", async () => {
             // 2. Create Transaction for final ROI
             await Transaction.create({
               userId: investment.userId,
-              type: "investment_roi", // Specific type
+              type: "investment", // Specific type
               transactionType: "credit",
               amount: finalROI,
               status: "completed",
@@ -91,7 +91,7 @@ cron.schedule("0 0,12 * * *", async () => {
           // 4. Create Transaction for Principal (as requested)
           await Transaction.create({
             userId: investment.userId,
-            type: "investment_principal", // Specific type
+            type: "investment", // Specific type
             transactionType: "credit",
             amount: investment.amount,
             status: "completed",
@@ -131,7 +131,7 @@ cron.schedule("0 0,12 * * *", async () => {
           // 3. Create Transaction for total ROI
           await Transaction.create({
             userId: investment.userId,
-            type: "investment_roi",
+            type: "investment",
             transactionType: "credit",
             amount: finalROI,
             status: "completed",
@@ -141,7 +141,7 @@ cron.schedule("0 0,12 * * *", async () => {
           // 4. Create Transaction for Principal
           await Transaction.create({
             userId: investment.userId,
-            type: "investment_principal",
+            type: "investment",
             transactionType: "credit",
             amount: investment.amount,
             status: "completed",
@@ -183,7 +183,7 @@ cron.schedule("0 0,12 * * *", async () => {
           // 2. Create Transaction for daily ROI
           await Transaction.create({
             userId: investment.userId,
-            type: "investment_roi",
+            type: "investment",
             amount: totalROI,
             transactionType: "credit",
             status: "completed",
