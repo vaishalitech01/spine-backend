@@ -34,7 +34,7 @@ connectDB().then(() => {
 
 // Default Route
 app.get('/', (req, res) => {
-    res.send('Hello World from backend!');
+    res.send('Hello World from ba');
 });
 
 // Route Usage
